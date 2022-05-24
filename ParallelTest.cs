@@ -14,6 +14,9 @@ namespace ParallelTest
             Console.ReadLine();
         }
 
+        //task1: 采集数据
+        //task2: while(DateTime.Now < estimatedEndTime)
+        //       {rise => 检测超时 => 跑完剩余rise时间 => fall => 检测超时 => 跑完剩余fall时间}
         public void Run()
         {
             TimeSpan totalDuration = TimeSpan.FromSeconds(100);//总时长
