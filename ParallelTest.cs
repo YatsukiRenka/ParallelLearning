@@ -38,88 +38,14 @@ namespace ParallelTest
                 {
                     while (DateTime.Now < estimatedEndTime)
                     {
-                        Rise(Step_Time_ms, estimatedEndTime);//rise过程
-
-                        #region 检测超时(rise后)
-
-                        Console.WriteLine();
-                        Console.WriteLine($"Start Timeout Check...[{DateTime.Now}]");
-                        Console.WriteLine($"Total running time: [{sw.ElapsedMilliseconds}]");
-                        Console.WriteLine();
-
-                        Stopwatch swTimeout = Stopwatch.StartNew();
-                        bool isTimeoutBreak = false;
-
-                        for (int i = 0; i < Timeout_s; i++)
-                        {
-                            if (DateTime.Now >= estimatedEndTime)
-                            {
-                                isTimeoutBreak = true;
-                                Console.WriteLine($"Process end at [{DateTime.Now}] for [{sw.ElapsedMilliseconds}]ms");
-                                break;
-                            }
-                            Thread.Sleep(1000);
-                            Console.WriteLine($"Timeout Check is running...[{swTimeout.ElapsedMilliseconds}]ms");
-                        }
-
-                        Console.WriteLine();
-                        Console.WriteLine($"Timeout Check done at [{DateTime.Now}] for [{swTimeout.ElapsedMilliseconds}]ms");
-                        Console.WriteLine();
-                        swTimeout.Stop();
-
-                        if (isTimeoutBreak) { }
-                        else
-                        {
-                            if (DateTime.Now >= estimatedEndTime)
-                            {
-                                Console.WriteLine($"Process end at [{DateTime.Now}] for [{sw.ElapsedMilliseconds}]ms");
-                            }
-                        }
-
-                        #endregion
-
+                        //rise过程
+                        Rise(Step_Time_ms, estimatedEndTime);
+                        TimeoutCheck(new Stopwatch(), Timeout_s, estimatedEndTime);
                         Thread.Sleep((int)(Rise_Time_s - Timeout_s) * 1000);//跑完rise后的时长
 
-                        Fall(Step_Time_ms, estimatedEndTime);//fall过程
-
-                        #region 检测超时(fall后)
-
-                        Console.WriteLine();
-                        Console.WriteLine($"Start Timeout Check...[{DateTime.Now}]");
-                        Console.WriteLine($"Total running time: [{sw.ElapsedMilliseconds}]");
-                        Console.WriteLine();
-
-                        swTimeout.Reset();
-                        swTimeout.Start();
-                        isTimeoutBreak = false;
-
-                        for (int i = 0; i < Timeout_s; i++)
-                        {
-                            if (DateTime.Now >= estimatedEndTime)
-                            {
-                                isTimeoutBreak = true;
-                                Console.WriteLine($"Process end at [{DateTime.Now}] for [{sw.ElapsedMilliseconds}]ms");
-                                break;
-                            }
-                            Thread.Sleep(1000);
-                            Console.WriteLine($"Timeout Check is running...[{swTimeout.ElapsedMilliseconds}]ms");
-                        }
-
-                        Console.WriteLine();
-                        Console.WriteLine($"Timeout Check done at [{DateTime.Now}] for [{swTimeout.ElapsedMilliseconds}]ms");
-                        swTimeout.Stop();
-
-                        if (isTimeoutBreak) { }
-                        else
-                        {
-                            if (DateTime.Now >= estimatedEndTime)
-                            {
-                                Console.WriteLine($"Process end at [{DateTime.Now}] for [{sw.ElapsedMilliseconds}]ms");
-                            }
-                        }
-
-                        #endregion
-
+                        //fall过程
+                        Fall(Step_Time_ms, estimatedEndTime);
+                        TimeoutCheck(new Stopwatch(), Timeout_s, estimatedEndTime);
                         Thread.Sleep((int)(Fall_Time_s - Timeout_s) * 1000);//跑完fall后的时长
                     }
                 });
@@ -149,7 +75,6 @@ namespace ParallelTest
 
             Console.WriteLine();
             Console.WriteLine($"Rising finished...[{swRise.ElapsedMilliseconds}]ms");
-            Console.WriteLine();
         }
 
         /// <summary>
@@ -176,7 +101,6 @@ namespace ParallelTest
 
             Console.WriteLine();
             Console.WriteLine($"Falling finished...[{swFall.ElapsedMilliseconds}]ms");
-            Console.WriteLine();
         }
 
         /// <summary>
@@ -185,34 +109,35 @@ namespace ParallelTest
         /// <param name="sw"></param>
         /// <param name="Timeout_s"></param>
         /// <param name="estimatedEndTime"></param>
-        public void TimeoutCheck(Stopwatch sw, double Timeout_s, DateTime estimatedEndTime)
+        public void TimeoutCheck(Stopwatch swTimeout, double Timeout_s, DateTime estimatedEndTime)
         {
             Console.WriteLine();
             Console.WriteLine($"Start Timeout Check...[{DateTime.Now}]");
-            Console.WriteLine($"Total running time: [{sw.ElapsedMilliseconds}]");
             Console.WriteLine();
 
-            Stopwatch swTimeout = Stopwatch.StartNew();
+            swTimeout.Reset();
+            swTimeout.Start();
             bool isBreak = false;
 
-            for (int i = 0; i < Timeout_s * 10; i++)
+            for (int i = 0; i < Timeout_s; i++)
             {
                 if (DateTime.Now >= estimatedEndTime)
                 {
                     isBreak = true;
-                    Console.WriteLine($"Process end at [{DateTime.Now}] for [{sw.ElapsedMilliseconds}]ms");
+                    Console.WriteLine($"Process end at [{DateTime.Now}]");
                     break;
                 }
                 Thread.Sleep(1000);
                 Console.WriteLine($"Timeout Check is running...[{swTimeout.ElapsedMilliseconds}]ms");
             }
+            swTimeout.Stop();
 
             if (isBreak) { }
             else
             {
                 if (DateTime.Now >= estimatedEndTime)
                 {
-                    Console.WriteLine($"Process end at [{DateTime.Now}] for [{sw.ElapsedMilliseconds}]ms");
+                    Console.WriteLine($"Process end at [{DateTime.Now}]");
                 }
             }
         }
