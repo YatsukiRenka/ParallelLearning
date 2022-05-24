@@ -19,13 +19,13 @@ namespace ParallelTest
         //       {rise => 检测超时 => 跑完剩余rise时间 => fall => 检测超时 => 跑完剩余fall时间}
         public void Run()
         {
-            TimeSpan totalDuration = TimeSpan.FromSeconds(100);//总时长
+            TimeSpan totalDuration = TimeSpan.FromSeconds(61);//总时长
             DateTime estimatedEndTime = DateTime.Now + totalDuration;//结束时间
 
-            double Rise_Time_s = 200;//升(s)
-            double Fall_Time_s = 160;//降(s)
-            double Step_Time_ms = 1000;//step(ms)
-            double Timeout_s = 10;//超时(s)
+            double Rise_Time_s = 20;//升(s)
+            double Fall_Time_s = 16;//降(s)
+            double Step_Time_ms = 500;//step(ms) 升降总时长均为5s
+            double Timeout_s = 5;//超时(s)
             double samplingInterval_s = 1;//间隔(10*100ms)
 
             Console.WriteLine($"Start Processing at [{DateTime.Now}]");
@@ -50,7 +50,7 @@ namespace ParallelTest
                         Stopwatch swTimeout = Stopwatch.StartNew();
                         bool isTimeoutBreak = false;
 
-                        for (int i = 0; i < Timeout_s * 10; i++)
+                        for (int i = 0; i < Timeout_s; i++)
                         {
                             if (DateTime.Now >= estimatedEndTime)
                             {
@@ -64,6 +64,7 @@ namespace ParallelTest
 
                         Console.WriteLine();
                         Console.WriteLine($"Timeout Check done at [{DateTime.Now}] for [{swTimeout.ElapsedMilliseconds}]ms");
+                        Console.WriteLine();
                         swTimeout.Stop();
 
                         if (isTimeoutBreak) { }
@@ -92,7 +93,7 @@ namespace ParallelTest
                         swTimeout.Start();
                         isTimeoutBreak = false;
 
-                        for (int i = 0; i < Timeout_s * 10; i++)
+                        for (int i = 0; i < Timeout_s; i++)
                         {
                             if (DateTime.Now >= estimatedEndTime)
                             {
@@ -143,7 +144,7 @@ namespace ParallelTest
                     break;
                 }
                 Thread.Sleep((int)(stepTime));
-                Console.WriteLine($"Rising Step[{i}]...[{swRise.ElapsedMilliseconds}]ms]");
+                Console.WriteLine($"Rising Step[{i + 1}]...[{swRise.ElapsedMilliseconds}]ms]");
             }
 
             Console.WriteLine();
@@ -170,7 +171,7 @@ namespace ParallelTest
                     break;
                 }
                 Thread.Sleep((int)(Step_Time_ms));
-                Console.WriteLine($"Falling Step[{i}]...[{swFall.ElapsedMilliseconds}]ms]");
+                Console.WriteLine($"Falling Step[{i + 1}]...[{swFall.ElapsedMilliseconds}]ms]");
             }
 
             Console.WriteLine();
