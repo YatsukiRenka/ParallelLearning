@@ -29,14 +29,15 @@ namespace ParallelTest
             Stopwatch sw = Stopwatch.StartNew();
 
             Parallel.Invoke(
+                //全程收集数据
                 () => Collecting(samplingInterval_s, estimatedEndTime),
                 () =>
                 {
                     while (DateTime.Now < estimatedEndTime)
                     {
-                        Rise(Step_Time_ms, estimatedEndTime);
+                        Rise(Step_Time_ms, estimatedEndTime);//rise过程
 
-                        #region timeout check
+                        #region 检测超时(rise后)
 
                         Console.WriteLine();
                         Console.WriteLine($"Start Timeout Check...[{DateTime.Now}]");
@@ -71,13 +72,13 @@ namespace ParallelTest
                             }
                         }
 
-                        #endregion timeout check
+                        #endregion
 
-                        Thread.Sleep((int)(Rise_Time_s - Timeout_s) * 1000);
+                        Thread.Sleep((int)(Rise_Time_s - Timeout_s) * 1000);//跑完rise后的时长
 
-                        Fall(Step_Time_ms, estimatedEndTime);
+                        Fall(Step_Time_ms, estimatedEndTime);//fall过程
 
-                        #region timeout check secondtime
+                        #region 检测超时(fall后)
 
                         Console.WriteLine();
                         Console.WriteLine($"Start Timeout Check...[{DateTime.Now}]");
@@ -113,13 +114,18 @@ namespace ParallelTest
                             }
                         }
 
-                        #endregion timeout check secondtime
+                        #endregion
 
-                        Thread.Sleep((int)(Fall_Time_s - Timeout_s) * 1000);
+                        Thread.Sleep((int)(Fall_Time_s - Timeout_s) * 1000);//跑完fall后的时长
                     }
                 });
         }
 
+        /// <summary>
+        /// 升过程
+        /// </summary>
+        /// <param name="stepTime"></param>
+        /// <param name="endTime"></param>
         public void Rise(double stepTime, DateTime endTime)
         {
             Console.WriteLine($"Start rising...[{DateTime.Now}]");
@@ -142,6 +148,11 @@ namespace ParallelTest
             Console.WriteLine();
         }
 
+        /// <summary>
+        /// 降过程
+        /// </summary>
+        /// <param name="Step_Time_ms"></param>
+        /// <param name="estimatedEndTime"></param>
         public void Fall(double Step_Time_ms, DateTime estimatedEndTime)
         {
             Console.WriteLine($"Start falling...[{DateTime.Now}]");
@@ -164,6 +175,12 @@ namespace ParallelTest
             Console.WriteLine();
         }
 
+        /// <summary>
+        /// 检测超时
+        /// </summary>
+        /// <param name="sw"></param>
+        /// <param name="Timeout_s"></param>
+        /// <param name="estimatedEndTime"></param>
         public void TimeoutCheck(Stopwatch sw, double Timeout_s, DateTime estimatedEndTime)
         {
             Console.WriteLine();
@@ -196,6 +213,11 @@ namespace ParallelTest
             }
         }
 
+        /// <summary>
+        /// 收集数据
+        /// </summary>
+        /// <param name="samplingInterval_s"></param>
+        /// <param name="estimatedEndTime"></param>
         public void Collecting(double samplingInterval_s, DateTime estimatedEndTime)
         {
             Stopwatch swCollect = Stopwatch.StartNew();
