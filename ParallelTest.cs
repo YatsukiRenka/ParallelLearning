@@ -16,7 +16,8 @@ namespace ParallelTest
 
         //task1: 采集数据
         //task2: while(DateTime.Now < estimatedEndTime)
-        //       {rise => 检测超时 => 跑完剩余rise时间 => fall => 检测超时 => 跑完剩余fall时间}
+        //       {rise => 检测超时 => 运行剩余rise时间 => fall => 检测超时 => 运行剩余fall时间}
+        //时间到，若在rise阶段内，进行fall动作退出，反之则直接退出
         public void Run()
         {
             TimeSpan totalDuration = TimeSpan.FromSeconds(61);//总时长
@@ -27,28 +28,68 @@ namespace ParallelTest
             double Step_Time_ms = 500;//step(ms) 升降总时长均为5s
             double Timeout_s = 5;//超时(s)
             double samplingInterval_s = 1;//间隔(10*100ms)
+            bool isBreak = false;
 
             Console.WriteLine($"Start Processing at [{DateTime.Now}]");
             Stopwatch sw = Stopwatch.StartNew();
 
             Parallel.Invoke(
-                //全程收集数据
+                //全程采集数据
                 () => Collecting(samplingInterval_s, estimatedEndTime),
                 () =>
                 {
+                    isBreak = false;
+
                     while (DateTime.Now < estimatedEndTime)
                     {
-                        //rise过程
-                        Rise(Step_Time_ms, estimatedEndTime);
-                        TimeoutCheck(new Stopwatch(), Timeout_s, estimatedEndTime);
-                        Thread.Sleep((int)(Rise_Time_s - Timeout_s) * 1000);//跑完rise后的时长
+                        #region rise过程
 
-                        //fall过程
+                        Rise(Step_Time_ms, estimatedEndTime);
+                        if (DateTime.Now >= estimatedEndTime)
+                        {
+                            Fall(Step_Time_ms, estimatedEndTime);
+                            break;
+                        }
+                        if (TimeoutCheck(new Stopwatch(), Step_Time_ms, Timeout_s, estimatedEndTime)) { break; }
+
+                        for (int i = 0; i < (Rise_Time_s - Timeout_s); i++)
+                        {
+                            if (DateTime.Now >= estimatedEndTime)
+                            {
+                                isBreak = true;
+                                Fall(Step_Time_ms, estimatedEndTime);
+                                break;
+                            }
+                            Thread.Sleep(1000);
+                        }
+                        if (isBreak) { break; }
+
+                        #endregion rise过程
+
+                        #region fall过程
+
                         Fall(Step_Time_ms, estimatedEndTime);
-                        TimeoutCheck(new Stopwatch(), Timeout_s, estimatedEndTime);
-                        Thread.Sleep((int)(Fall_Time_s - Timeout_s) * 1000);//跑完fall后的时长
+                        if (DateTime.Now >= estimatedEndTime)
+                        {
+                            break;
+                        }
+                        if (TimeoutCheck(new Stopwatch(), Step_Time_ms, Timeout_s, estimatedEndTime)) { break; }
+
+                        for (int i = 0; i < (Fall_Time_s - Timeout_s); i++)
+                        {
+                            if (DateTime.Now >= estimatedEndTime)
+                            {
+                                break;
+                            }
+                            Thread.Sleep(1000);
+                        }
+                        if (isBreak) { break; }
+
+                        #endregion fall过程
                     }
                 });
+
+            Console.WriteLine($"Process end at [{DateTime.Now}], run [{sw.ElapsedMilliseconds}]ms");
         }
 
         /// <summary>
@@ -64,17 +105,13 @@ namespace ParallelTest
 
             for (int i = 0; i < 10; i++)
             {
-                if (DateTime.Now >= endTime)
-                {
-                    Console.WriteLine($"Process end at [{DateTime.Now}]");
-                    break;
-                }
                 Thread.Sleep((int)(stepTime));
                 Console.WriteLine($"Rising Step[{i + 1}]...[{swRise.ElapsedMilliseconds}]ms]");
             }
 
             Console.WriteLine();
             Console.WriteLine($"Rising finished...[{swRise.ElapsedMilliseconds}]ms");
+            Console.WriteLine();
         }
 
         /// <summary>
@@ -86,21 +123,19 @@ namespace ParallelTest
         {
             Console.WriteLine($"Start falling...[{DateTime.Now}]");
             Console.WriteLine();
+
             Stopwatch swFall = Stopwatch.StartNew();
 
             for (int i = 0; i < 10; i++)
             {
-                if (DateTime.Now >= estimatedEndTime)
-                {
-                    Console.WriteLine($"Process end at [{DateTime.Now}]");
-                    break;
-                }
                 Thread.Sleep((int)(Step_Time_ms));
-                Console.WriteLine($"Falling Step[{i + 1}]...[{swFall.ElapsedMilliseconds}]ms]");
+                Console.WriteLine($"Falling Step[{i + 1}]...[{swFall.ElapsedMilliseconds}]ms");
             }
 
             Console.WriteLine();
-            Console.WriteLine($"Falling finished...[{swFall.ElapsedMilliseconds}]ms");
+            Console.WriteLine($"Falling finished...[{DateTime.Now}] for [{swFall.ElapsedMilliseconds}]ms");
+            Console.WriteLine();
+            swFall.Stop();
         }
 
         /// <summary>
@@ -109,22 +144,21 @@ namespace ParallelTest
         /// <param name="sw"></param>
         /// <param name="Timeout_s"></param>
         /// <param name="estimatedEndTime"></param>
-        public void TimeoutCheck(Stopwatch swTimeout, double Timeout_s, DateTime estimatedEndTime)
+        public bool TimeoutCheck(Stopwatch swTimeout, double Step_Time_ms, double Timeout_s, DateTime estimatedEndTime)
         {
-            Console.WriteLine();
             Console.WriteLine($"Start Timeout Check...[{DateTime.Now}]");
             Console.WriteLine();
 
+            bool isBreak = false;
             swTimeout.Reset();
             swTimeout.Start();
-            bool isBreak = false;
 
             for (int i = 0; i < Timeout_s; i++)
             {
                 if (DateTime.Now >= estimatedEndTime)
                 {
                     isBreak = true;
-                    Console.WriteLine($"Process end at [{DateTime.Now}]");
+                    Fall(Step_Time_ms, estimatedEndTime);
                     break;
                 }
                 Thread.Sleep(1000);
@@ -135,22 +169,21 @@ namespace ParallelTest
             if (isBreak) { }
             else
             {
-                if (DateTime.Now >= estimatedEndTime)
-                {
-                    Console.WriteLine($"Process end at [{DateTime.Now}]");
-                }
+                Console.WriteLine();
+                Console.WriteLine($"Timeout Check Finished...[{DateTime.Now}]");
+                Console.WriteLine();
             }
+            return isBreak;
         }
 
         /// <summary>
-        /// 收集数据
+        /// 采集数据
         /// </summary>
         /// <param name="samplingInterval_s"></param>
         /// <param name="estimatedEndTime"></param>
         public void Collecting(double samplingInterval_s, DateTime estimatedEndTime)
         {
             Stopwatch swCollect = Stopwatch.StartNew();
-            bool isBreak = false;
 
             while (DateTime.Now < estimatedEndTime)
             {
@@ -158,23 +191,13 @@ namespace ParallelTest
                 {
                     if (DateTime.Now >= estimatedEndTime)
                     {
-                        isBreak = true;
-                        Console.WriteLine($"Process end at [{DateTime.Now}]");
                         break;
                     }
                     Thread.Sleep(1000);
                     Console.WriteLine($"Collecting... [{swCollect.ElapsedMilliseconds}]ms");
                 }
             }
-
-            if (isBreak) { }
-            else
-            {
-                if (DateTime.Now >= estimatedEndTime)
-                {
-                    Console.WriteLine($"Process end at [{DateTime.Now}]");
-                }
-            }
+            swCollect.Stop();
         }
     }
 }
