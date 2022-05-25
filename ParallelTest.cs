@@ -7,7 +7,7 @@ namespace ParallelTest
 {
     public class ParallelTest
     {
-        private static void Main(string[] args)
+        private static void Main()
         {
             ParallelTest test = new ParallelTest();
             test.Run();
@@ -44,10 +44,10 @@ namespace ParallelTest
                     {
                         #region rise过程
 
-                        Rise(Step_Time_ms, estimatedEndTime);
+                        Rise(Step_Time_ms);
                         if (DateTime.Now >= estimatedEndTime)
                         {
-                            Fall(Step_Time_ms, estimatedEndTime);
+                            Fall(Step_Time_ms);
                             break;
                         }
                         if (TimeoutCheck(new Stopwatch(), Step_Time_ms, Timeout_s, estimatedEndTime)) { break; }
@@ -57,7 +57,7 @@ namespace ParallelTest
                             if (DateTime.Now >= estimatedEndTime)
                             {
                                 isBreak = true;
-                                Fall(Step_Time_ms, estimatedEndTime);
+                                Fall(Step_Time_ms);
                                 break;
                             }
                             Thread.Sleep(1000);
@@ -68,7 +68,7 @@ namespace ParallelTest
 
                         #region fall过程
 
-                        Fall(Step_Time_ms, estimatedEndTime);
+                        Fall(Step_Time_ms);
                         if (DateTime.Now >= estimatedEndTime)
                         {
                             break;
@@ -97,7 +97,7 @@ namespace ParallelTest
         /// </summary>
         /// <param name="stepTime"></param>
         /// <param name="endTime"></param>
-        public void Rise(double stepTime, DateTime endTime)
+        public void Rise(double stepTime)
         {
             Console.WriteLine($"Start rising...[{DateTime.Now}]");
             Console.WriteLine();
@@ -119,7 +119,7 @@ namespace ParallelTest
         /// </summary>
         /// <param name="Step_Time_ms"></param>
         /// <param name="estimatedEndTime"></param>
-        public void Fall(double Step_Time_ms, DateTime estimatedEndTime)
+        public void Fall(double Step_Time_ms)
         {
             Console.WriteLine($"Start falling...[{DateTime.Now}]");
             Console.WriteLine();
@@ -158,7 +158,7 @@ namespace ParallelTest
                 if (DateTime.Now >= estimatedEndTime)
                 {
                     isBreak = true;
-                    Fall(Step_Time_ms, estimatedEndTime);
+                    Fall(Step_Time_ms);
                     break;
                 }
                 Thread.Sleep(1000);
